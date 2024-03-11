@@ -209,7 +209,7 @@ int main()
     int choice;
     do
     {
-        cout << "\n1.create\n2.insert\n3.search\n4.minimum\n5.height\n6.swap\n7.display\n8.exit\n";
+        cout << "\n1.create\n2.insert\n3.search\n4.minimum\n5.height\n6.mirror\n7.display\n8.exit\n";
         cout << "enter your choice : ";
         cin >> choice;
 
