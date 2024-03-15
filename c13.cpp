@@ -12,7 +12,7 @@ class graph{
         //create constructor to set visit value 
         graph(){
             for(int i = 0 ; i < 10 ; i++){
-                visit[i] == 0;
+                visit[i] = 0;
             }
         }
 
@@ -39,11 +39,24 @@ class graph{
             int row = v;
             int col = v;
 
+            cout<<"\nmatrix representation of graph : "<<endl;
             for(int i = 0 ; i < row ; i++){
-                for (int j = 0 ; j < col ; j){
+                for (int j = 0 ; j < col ; j++){
                     cout<<matrix[i][j]<<" ";
                 }
                 cout<<endl;
+            }
+        }
+
+        void dfs(int x ,int v){
+            
+            char ch = 'a'+ x -1;
+            cout<<ch<<" ";
+            visit[x-1] = 1;
+            for(int i = 0 ; i < v ; i++){
+                if(matrix[x-1][i]==1 && visit[i]==0){
+                    dfs(i+1,v);
+                }
             }
         }
 };
@@ -57,7 +70,15 @@ int main (){
     cin>>v;
 
     g.input(v);
+    g.display(v);
 
-
+    int e;
+    cout<<"enter the starting edge : ";
+    cin>>e;
+    g.dfs(e,v);
 
 }
+
+
+//sample input for 4 vertices
+//0 1 0 1 1 0 1 1 0 1 0 1 1 1 1 0
