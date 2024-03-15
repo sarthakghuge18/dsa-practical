@@ -180,7 +180,7 @@ public:
                     s = min_node(p->right);
                     p->word = s->word;
                     p->meaning = s->meaning;
-                    delete_node(s,s->word);
+                    delete_node(p->right,s->word);    
                     return;
                 }
             }
