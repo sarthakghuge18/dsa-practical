@@ -48,8 +48,9 @@ class graph{
             }
         }
 
+        //displaying in DFS manner in the form of character 
         void dfs(int x ,int v){
-            
+
             char ch = 'a'+ x -1;
             cout<<ch<<" ";
             visit[x-1] = 1;
