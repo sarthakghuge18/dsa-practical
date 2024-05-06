@@ -1,4 +1,4 @@
-//E22.
+//E22.completed
 
 /*
 Read the marks obtained by students of second year in an online examination of particular subject. 
@@ -77,6 +77,10 @@ int main(){
     h.heapsort(arr,n);
     cout<<"Sorted Array : "<<endl;
     h.display(arr,n);
+
+
+    cout<<"Maximum Mark obtain : "<<arr[n-1]<<endl;
+    cout<<"Minimum Mark obtain : "<<arr[0]<<endl;
 
 
     return 0;
