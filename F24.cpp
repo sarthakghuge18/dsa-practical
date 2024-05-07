@@ -11,6 +11,7 @@ Use index sequential file to maintain the data.
 
 #include <iostream>
 #include <fstream>
+#include <map>
 using namespace std;
 
 class Record
@@ -21,143 +22,162 @@ class Record
     string designation;
 
 public:
-    Record()
-    {
-        id = 0;
-        name = ' ';
-        designation = ' ';
-        salary = 0;
-    }
-
-    int getIdno()
-    {
-        return (id);
-    }
-
-    void getData()
-    {
-        cout << "\nEnter Details: ";
-        cout << "\nId no: ";
-        cin >> id;
-        cout << "Name: ";
-        cin >> name;
-        cout << "Salary: ";
-        cin >> salary;
-        cout << "Designation: ";
-        cin >> designation;
-    }
-
-    void putData()
-    {
-        cout << "\nId No.: ";
-        cout << id;
-        cout << "\t\tName: ";
-        cout << name;
-        cout << "\nSalary: ";
-        cout << salary;
-        cout << "\tDesignation: ";
-        cout << designation;
-    }
+    Record();
+    int getIdno();
+    void getData();
+    void putData();
 };
+
+Record::Record()
+{
+    id = 0;
+    name = "";
+    designation = "";
+    salary = 0;
+}
+
+int Record::getIdno()
+{
+    return id;
+}
+
+void Record::getData()
+{
+    cout << "\nEnter Details: ";
+    cout << "\nId no: ";
+    cin >> id;
+    cout << "Name: ";
+    cin >> name;
+    cout << "Salary: ";
+    cin >> salary;
+    cout << "Designation: ";
+    cin >> designation;
+}
+
+void Record::putData()
+{
+    cout << "\nId No.: " << id;
+    cout << "\tName: " << name;
+    cout << "\nSalary: " << salary;
+    cout << "\tDesignation: " << designation;
+}
 
 class File
 {
-    ifstream fin;
-    ofstream fout;
-    fstream fs;
+    fstream dataFile;
+    map<int, long> index; // Key: ID, Value: File offset
 
 public:
-    void insert()
-    {
-        Record r;
-        r.getData();
-        fout.open("EmployeeDB.txt", ios::ate | ios::app);
-        fout.write((char *)&r, sizeof(r));
-        fout.close();
-    }
-
-    void display()
-    {
-        Record r;
-        fin.open("EmployeeDB.txt");
-        fin.seekg(0, ios::beg);
-        while (fin.read((char *)&r, sizeof(r)))
-            r.putData();
-
-        fin.close();
-    }
-
-    void search(int id)
-    {
-        Record r;
-        int flag = 0;
-        fin.open("EmployeeDB.txt");
-        fin.seekg(0, ios::beg);
-        while (fin.read((char *)&r, sizeof(r)))
-        {
-            if (r.getIdno() == id)
-            {
-                flag = 1;
-                break;
-            }
-        }
-
-        fin.close();
-        if (flag == 1)
-        {
-            cout << "\nRecord Found:";
-            r.putData();
-        }
-        else
-            cout << "\nRecord not Found ";
-    }
-
-    int Delete(int id)
-    {
-        Record r;
-        int flag = 0;
-        fin.open("EmployeeDB.txt");
-        fout.open("Temp", ios::ate | ios::app);
-        fin.seekg(0, ios::beg);
-        while (fin.read((char *)&r, sizeof(r)))
-        {
-            if (r.getIdno() == id)
-            {
-                flag = 1;
-            }
-            else
-            {
-                fout.write((char *)&r, sizeof(r));
-            }
-        }
-        fin.close();
-        fout.close();
-        remove("EmployeeDB.txt");
-        rename("Temp", "EmployeeDB.txt");
-        return (flag);
-    }
-
-    int edit(int id)
-    {
-        Record r;
-        int flag = 0;
-        fs.open("EmployeeDB.txt");
-        fs.seekg(0, ios::beg);
-        while (fs.read((char *)&r, sizeof(r)))
-        {
-            if (r.getIdno() == id)
-            {
-                flag = 1;
-                cout << "\nEnter New Details: ";
-                r.getData();
-                fs.seekp((int)fs.tellg() - sizeof(r), ios::beg);
-                fs.write((char *)&r, sizeof(r));
-            }
-        }
-        fs.close();
-        return (flag);
-    }
+    File();
+    void insert();
+    void display();
+    void search(int);
+    int Delete(int);
+    int edit(int);
 };
+
+File::File()
+{
+    dataFile.open("EmployeeDB", ios::in | ios::out | ios::binary | ios::app);
+    if (!dataFile)
+    {
+        cerr << "Error: Unable to open data file.";
+        exit(1);
+    }
+
+    // Build index
+    dataFile.seekg(0, ios::end);
+    streampos fileSize = dataFile.tellg();
+    if (fileSize != 0)
+    {
+        dataFile.seekg(0, ios::beg);
+        while (!dataFile.eof())
+        {
+            long pos = dataFile.tellg();
+            Record r;
+            dataFile.read((char *)&r, sizeof(r));
+            if (dataFile.eof())
+                break;
+            index[r.getIdno()] = pos;
+        }
+    }
+}
+
+void File::insert()
+{
+    Record r;
+    r.getData();
+    dataFile.write((char *)&r, sizeof(r));
+    index[r.getIdno()] = dataFile.tellp() - sizeof(r); // Update index
+}
+
+void File::display()
+{
+    dataFile.clear();
+    dataFile.seekg(0, ios::beg);
+    while (!dataFile.eof())
+    {
+        Record r;
+        dataFile.read((char *)&r, sizeof(r));
+        if (dataFile.eof())
+            break;
+        r.putData();
+    }
+}
+
+void File::search(int id)
+{
+    if (index.find(id) != index.end())
+    {
+        dataFile.clear();
+        dataFile.seekg(index[id], ios::beg);
+        Record r;
+        dataFile.read((char *)&r, sizeof(r));
+        r.putData();
+    }
+    else
+    {
+        cout << "\nRecord not Found";
+    }
+}
+
+int File::Delete(int id)
+{
+    if (index.find(id) != index.end())
+    {
+        dataFile.clear();
+        dataFile.seekg(index[id], ios::beg);
+        Record r;
+        dataFile.read((char *)&r, sizeof(r));
+        index.erase(id);
+        return 1;
+    }
+    else
+    {
+        cout << "\nRecord not Found";
+        return 0;
+    }
+}
+
+int File::edit(int id)
+{
+    if (index.find(id) != index.end())
+    {
+        dataFile.clear();
+        dataFile.seekg(index[id], ios::beg);
+        Record r;
+        dataFile.read((char *)&r, sizeof(r));
+        r.getData();
+        dataFile.seekp(index[id], ios::beg);
+        dataFile.write((char *)&r, sizeof(r));
+        return 1;
+    }
+    else
+    {
+        cout << "\nRecord not Found";
+        return 0;
+    }
+}
 
 int main()
 {
@@ -172,7 +192,7 @@ int main()
         cout << "\n4. Delete Old Entry";
         cout << "\n5. Edit an Entry";
         cout << "\n6. Search for a Record";
-        cout << "\n7. exit";
+        cout << "\n7. Quit";
         cout << "\nEnter your Choice: ";
         cin >> ch;
         switch (ch)
@@ -205,8 +225,6 @@ int main()
             i = f.Delete(n);
             if (i == 1)
                 cout << "\nRecord Deleted Successfully";
-            else
-                cout << "\nRecord not Found";
             break;
         case 5:
             cout << "\nEnter Id No of Employee Whose Record is to be Edit: ";
@@ -214,8 +232,6 @@ int main()
             i = f.edit(n);
             if (i == 1)
                 cout << "\nRecord Modified Successfully";
-            else
-                cout << "\nRecord not Found";
             break;
         case 6:
             cout << "\nEnter Id No of Employee Whose Record is to be Searched: ";
